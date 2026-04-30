@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Curl Stat Pro</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--tg-theme-bg-color, #0f1117);
+      color: var(--tg-theme-text-color, #e8eaf6);
+      line-height: 1.6;
+      min-height: 100vh;
+      padding: 20px 16px 40px;
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 28px;
+    }
+    .logo {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 6px;
+    }
+    .logo svg { flex-shrink: 0; }
+    .header h1 {
+      font-size: 1.5rem;
+      font-weight: 800;
+      color: #fff;
+      margin-bottom: 6px;
+    }
+    .header p {
+      font-size: .9rem;
+      color: #aab4d0;
+    }
+
+    .plans {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      max-width: 400px;
+      margin: 0 auto;
+    }
+
+    .plan {
+      background: #1a1d27;
+      border: 1.5px solid #2a2d3a;
+      border-radius: 16px;
+      padding: 22px 20px;
+      cursor: pointer;
+      position: relative;
+      transition: border-color .18s, box-shadow .18s, transform .12s;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .plan:active { transform: scale(0.98); }
+    .plan.featured { border-color: #4a6fff; box-shadow: 0 0 0 1px #4a6fff44; }
+    .plan.selected { border-color: #4a6fff; background: #1a1d3a; }
+
+    .badge {
+      position: absolute;
+      top: -11px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #2ecc71;
+      color: #fff;
+      font-size: .7rem;
+      font-weight: 700;
+      padding: 3px 12px;
+      border-radius: 20px;
+      white-space: nowrap;
+      letter-spacing: .03em;
+    }
+
+    .plan-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 10px;
+    }
+    .plan-name {
+      font-size: 1rem;
+      font-weight: 700;
+      color: #fff;
+    }
+    .plan-price { text-align: right; }
+    .price-main {
+      font-size: 1.6rem;
+      font-weight: 800;
+      color: #fff;
+      line-height: 1.1;
+    }
+    .price-sub { font-size: .75rem; color: #aab4d0; }
+    .price-monthly { font-size: .8rem; color: #7c9eff; margin-top: 2px; }
+
+    .plan-features {
+      list-style: none;
+      margin-top: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+    .plan-features li {
+      font-size: .85rem;
+      color: #aab4d0;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .plan-features li::before {
+      content: "";
+      display: inline-block;
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #4a6fff;
+      flex-shrink: 0;
+    }
+
+    .radio-dot {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      border: 2px solid #3a3d4a;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: border-color .18s;
+    }
+    .plan.selected .radio-dot { border-color: #4a6fff; }
+    .radio-inner {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #4a6fff;
+      opacity: 0;
+      transform: scale(0.5);
+      transition: opacity .18s, transform .18s;
+    }
+    .plan.selected .radio-inner { opacity: 1; transform: scale(1); }
+
+    .cta-wrap {
+      max-width: 400px;
+      margin: 24px auto 0;
+    }
+    .btn-pay {
+      width: 100%;
+      background: #4a6fff;
+      color: #fff;
+      border: none;
+      border-radius: 12px;
+      padding: 16px 24px;
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background .18s, transform .1s;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .btn-pay:hover { background: #3a5fee; }
+    .btn-pay:active { transform: scale(0.98); }
+    .btn-pay:disabled { opacity: .5; cursor: not-allowed; }
+
+    .terms-note {
+      text-align: center;
+      font-size: .75rem;
+      color: #6b7494;
+      margin-top: 14px;
+      line-height: 1.5;
+    }
+    .terms-note a { color: #7c9eff; text-decoration: none; }
+
+    .error-msg {
+      background: #2a1a1a;
+      border: 1px solid #cc2a3a44;
+      color: #ff7c8a;
+      border-radius: 10px;
+      padding: 12px 16px;
+      font-size: .85rem;
+      text-align: center;
+      margin: 12px auto 0;
+      max-width: 400px;
+      display: none;
+    }
+
+    .loading-spinner {
+      display: inline-block;
+      width: 18px;
+      height: 18px;
+      border: 2px solid rgba(255,255,255,.3);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin .7s linear infinite;
+      vertical-align: middle;
+      margin-right: 6px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+
+<div class="header">
+  <div class="logo">
+    <svg width="28" height="28" viewBox="0 0 28 28" fill="none" aria-label="Curl Stat">
+      <circle cx="14" cy="14" r="13" stroke="#4a6fff" stroke-width="1.5"/>
+      <circle cx="14" cy="14" r="9" stroke="#1A68C8" stroke-width="1.5"/>
+      <circle cx="14" cy="14" r="5" stroke="#CC2A3A" stroke-width="1.5"/>
+      <circle cx="14" cy="14" r="1.5" fill="#e8eaf6"/>
+    </svg>
+    Curl Stat
+  </div>
+  <h1>Pro-подписка</h1>
+  <p>Полный доступ к аналитике и статистике</p>
+</div>
+
+<div class="plans" id="plansContainer">
+
+  <div class="plan featured" id="plan-monthly" onclick="selectPlan('monthly')">
+    <div class="plan-header">
+      <div style="display:flex;align-items:center;gap:10px">
+        <div class="radio-dot"><div class="radio-inner"></div></div>
+        <span class="plan-name">Месяц</span>
+      </div>
+      <div class="plan-price">
+        <div class="price-main">299 ₽</div>
+        <div class="price-sub">/ месяц</div>
+      </div>
+    </div>
+    <ul class="plan-features">
+      <li>Неограниченные матчи и команды</li>
+      <li>Турниры</li>
+      <li>Экспорт CSV и JSON</li>
+      <li>Полная статистика игроков</li>
+    </ul>
+  </div>
+
+  <div class="plan" id="plan-yearly" onclick="selectPlan('yearly')">
+    <div class="badge">Экономия 44%</div>
+    <div class="plan-header">
+      <div style="display:flex;align-items:center;gap:10px">
+        <div class="radio-dot"><div class="radio-inner"></div></div>
+        <span class="plan-name">Год</span>
+      </div>
+      <div class="plan-price">
+        <div class="price-main">1990 ₽</div>
+        <div class="price-sub">/ год</div>
+        <div class="price-monthly">≈ 166 ₽/мес</div>
+      </div>
+    </div>
+    <ul class="plan-features">
+      <li>Всё из тарифа «Месяц»</li>
+      <li>Приоритетная поддержка</li>
+      <li>Доступ к новым функциям раньше</li>
+    </ul>
+  </div>
+
+</div>
+
+<div class="error-msg" id="errorMsg"></div>
+
+<div class="cta-wrap">
+  <button class="btn-pay" id="payBtn" onclick="startPayment()">
+    Перейти к оплате
+  </button>
+  <p class="terms-note">
+    Нажимая «Перейти к оплате», вы соглашаетесь с
+    <a href="https://andrew2284868.github.io/curlstat-landing/offer.html" target="_blank">офертой</a>
+    и
+    <a href="https://andrew2284868.github.io/curlstat-landing/privacy.html" target="_blank">политикой конфиденциальности</a>
+  </p>
+</div>
+
+<script>
+// ── Config ──────────────────────────────────────────────────────────────────
+// ВАЖНО: замените на реальный URL вашего бот-сервера (WEBHOOK_HOST из env)
+const BOT_API_URL = 'https://YOUR_BOT_HOST';
+// ────────────────────────────────────────────────────────────────────────────
+
+const tg = window.Telegram?.WebApp;
+let selectedPlan = 'monthly';
+let tgUserId = null;
+
+if (tg) {
+  tg.ready();
+  tg.expand();
+  tgUserId = tg.initDataUnsafe?.user?.id;
+}
+
+selectPlan('monthly');
+
+function selectPlan(plan) {
+  selectedPlan = plan;
+  document.getElementById('plan-monthly').classList.toggle('selected', plan === 'monthly');
+  document.getElementById('plan-yearly').classList.toggle('selected', plan === 'yearly');
+  hideError();
+}
+
+function showError(msg) {
+  const el = document.getElementById('errorMsg');
+  el.textContent = msg;
+  el.style.display = 'block';
+}
+function hideError() {
+  document.getElementById('errorMsg').style.display = 'none';
+}
+
+async function startPayment() {
+  hideError();
+
+  if (!tgUserId) {
+    const params = new URLSearchParams(window.location.search);
+    tgUserId = params.get('tg_id');
+  }
+
+  if (!tgUserId) {
+    showError('Откройте эту страницу через Telegram.');
+    return;
+  }
+
+  const btn = document.getElementById('payBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="loading-spinner"></span>Подготовка...';
+
+  try {
+    const res = await fetch(`${BOT_API_URL}/payment/create`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ tg_user_id: String(tgUserId), plan: selectedPlan }),
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || `Ошибка сервера: ${res.status}`);
+    }
+
+    const data = await res.json();
+    if (!data.url) throw new Error('Не удалось получить ссылку на оплату');
+
+    if (tg?.openLink) {
+      tg.openLink(data.url);
+    } else {
+      window.location.href = data.url;
+    }
+
+  } catch (e) {
+    showError(e.message || 'Не удалось создать платёж. Попробуйте позже.');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = 'Перейти к оплате';
+  }
+}
+</script>
+</body>
+</html>
