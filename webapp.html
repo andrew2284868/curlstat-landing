@@ -42,7 +42,6 @@
       color: #aab4d0;
     }
 
-    /* ── Методы оплаты ── */
     .pay-methods {
       display: flex;
       align-items: center;
@@ -74,7 +73,6 @@
     .dot-card  { background: #4a6fff; }
     .dot-tbank { background: #f8c800; }
 
-    /* ── Тарифы ── */
     .plans {
       display: flex;
       flex-direction: column;
@@ -253,7 +251,6 @@
   <p>Полный доступ к аналитике и статистике</p>
 </div>
 
-<!-- Методы оплаты -->
 <div class="pay-methods">
   <div class="pay-method"><span class="dot dot-sbp"></span>СБП</div>
   <div class="pay-method"><span class="dot dot-card"></span>Банковская карта</div>
@@ -318,10 +315,7 @@
 </div>
 
 <script>
-// ── Config ──────────────────────────────────────────────────────────────────
-// Замените на реальный WEBHOOK_HOST из env вашего бот-сервера
-const BOT_API_URL = 'https://YOUR_BOT_HOST';
-// ────────────────────────────────────────────────────────────────────────────
+const BOT_API_URL = 'https://bba111ukubqgm2svbr45.containers.yandexcloud.net';
 
 const tg = window.Telegram?.WebApp;
 let selectedPlan = 'monthly';
@@ -356,7 +350,6 @@ function hideError() {
 async function startPayment() {
   hideError();
 
-  // Fallback: tg_id из URL-параметра (для тестирования)
   if (!tgUserId) {
     const params = new URLSearchParams(window.location.search);
     tgUserId = params.get('tg_id');
@@ -376,7 +369,6 @@ async function startPayment() {
       plan: selectedPlan,
       tg_user_id: String(tgUserId),
     };
-    // Если есть initData — передаём для безопасной проверки на сервере
     if (initDataRaw) {
       body.init_data = initDataRaw;
     }
@@ -395,7 +387,6 @@ async function startPayment() {
     const data = await res.json();
     if (!data.url) throw new Error('Не удалось получить ссылку на оплату');
 
-    // Открываем Robokassa во внешнем браузере (обязательно для редиректа после оплаты)
     if (tg?.openLink) {
       tg.openLink(data.url);
     } else {
