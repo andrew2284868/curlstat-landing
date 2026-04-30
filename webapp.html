@@ -14,12 +14,12 @@
       color: var(--tg-theme-text-color, #e8eaf6);
       line-height: 1.6;
       min-height: 100vh;
-      padding: 20px 16px 40px;
+      padding: 20px 16px 48px;
     }
 
     .header {
       text-align: center;
-      margin-bottom: 28px;
+      margin-bottom: 24px;
     }
     .logo {
       display: inline-flex;
@@ -32,16 +32,49 @@
     }
     .logo svg { flex-shrink: 0; }
     .header h1 {
-      font-size: 1.5rem;
+      font-size: 1.45rem;
       font-weight: 800;
       color: #fff;
-      margin-bottom: 6px;
+      margin-bottom: 5px;
     }
     .header p {
-      font-size: .9rem;
+      font-size: .88rem;
       color: #aab4d0;
     }
 
+    /* ── Методы оплаты ── */
+    .pay-methods {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin: 14px auto 24px;
+      max-width: 400px;
+    }
+    .pay-method {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      background: #1a1d27;
+      border: 1px solid #2a2d3a;
+      border-radius: 8px;
+      padding: 5px 10px;
+      font-size: .78rem;
+      font-weight: 600;
+      color: #c8cfe8;
+      white-space: nowrap;
+    }
+    .pay-method .dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .dot-sbp   { background: #00c766; }
+    .dot-card  { background: #4a6fff; }
+    .dot-tbank { background: #f8c800; }
+
+    /* ── Тарифы ── */
     .plans {
       display: flex;
       flex-direction: column;
@@ -54,7 +87,7 @@
       background: #1a1d27;
       border: 1.5px solid #2a2d3a;
       border-radius: 16px;
-      padding: 22px 20px;
+      padding: 20px 18px;
       cursor: pointer;
       position: relative;
       transition: border-color .18s, box-shadow .18s, transform .12s;
@@ -64,7 +97,7 @@
     .plan.featured { border-color: #4a6fff; box-shadow: 0 0 0 1px #4a6fff44; }
     .plan.selected { border-color: #4a6fff; background: #1a1d3a; }
 
-    .badge {
+    .badge-popular {
       position: absolute;
       top: -11px;
       left: 50%;
@@ -108,7 +141,7 @@
       gap: 5px;
     }
     .plan-features li {
-      font-size: .85rem;
+      font-size: .84rem;
       color: #aab4d0;
       display: flex;
       align-items: center;
@@ -149,7 +182,7 @@
 
     .cta-wrap {
       max-width: 400px;
-      margin: 24px auto 0;
+      margin: 22px auto 0;
     }
     .btn-pay {
       width: 100%;
@@ -170,9 +203,9 @@
 
     .terms-note {
       text-align: center;
-      font-size: .75rem;
+      font-size: .73rem;
       color: #6b7494;
-      margin-top: 14px;
+      margin-top: 12px;
       line-height: 1.5;
     }
     .terms-note a { color: #7c9eff; text-decoration: none; }
@@ -220,6 +253,13 @@
   <p>Полный доступ к аналитике и статистике</p>
 </div>
 
+<!-- Методы оплаты -->
+<div class="pay-methods">
+  <div class="pay-method"><span class="dot dot-sbp"></span>СБП</div>
+  <div class="pay-method"><span class="dot dot-card"></span>Банковская карта</div>
+  <div class="pay-method"><span class="dot dot-tbank"></span>Т-Банк</div>
+</div>
+
 <div class="plans" id="plansContainer">
 
   <div class="plan featured" id="plan-monthly" onclick="selectPlan('monthly')">
@@ -229,7 +269,7 @@
         <span class="plan-name">Месяц</span>
       </div>
       <div class="plan-price">
-        <div class="price-main">299 ₽</div>
+        <div class="price-main">399 ₽</div>
         <div class="price-sub">/ месяц</div>
       </div>
     </div>
@@ -242,16 +282,16 @@
   </div>
 
   <div class="plan" id="plan-yearly" onclick="selectPlan('yearly')">
-    <div class="badge">Экономия 44%</div>
+    <div class="badge-popular">Экономия 789 ₽/год</div>
     <div class="plan-header">
       <div style="display:flex;align-items:center;gap:10px">
         <div class="radio-dot"><div class="radio-inner"></div></div>
         <span class="plan-name">Год</span>
       </div>
       <div class="plan-price">
-        <div class="price-main">1990 ₽</div>
+        <div class="price-main">3999 ₽</div>
         <div class="price-sub">/ год</div>
-        <div class="price-monthly">≈ 166 ₽/мес</div>
+        <div class="price-monthly">≈ 333 ₽/мес</div>
       </div>
     </div>
     <ul class="plan-features">
@@ -279,18 +319,20 @@
 
 <script>
 // ── Config ──────────────────────────────────────────────────────────────────
-// ВАЖНО: замените на реальный URL вашего бот-сервера (WEBHOOK_HOST из env)
+// Замените на реальный WEBHOOK_HOST из env вашего бот-сервера
 const BOT_API_URL = 'https://YOUR_BOT_HOST';
 // ────────────────────────────────────────────────────────────────────────────
 
 const tg = window.Telegram?.WebApp;
 let selectedPlan = 'monthly';
 let tgUserId = null;
+let initDataRaw = '';
 
 if (tg) {
   tg.ready();
   tg.expand();
-  tgUserId = tg.initDataUnsafe?.user?.id;
+  tgUserId    = tg.initDataUnsafe?.user?.id;
+  initDataRaw = tg.initData || '';
 }
 
 selectPlan('monthly');
@@ -314,6 +356,7 @@ function hideError() {
 async function startPayment() {
   hideError();
 
+  // Fallback: tg_id из URL-параметра (для тестирования)
   if (!tgUserId) {
     const params = new URLSearchParams(window.location.search);
     tgUserId = params.get('tg_id');
@@ -329,10 +372,19 @@ async function startPayment() {
   btn.innerHTML = '<span class="loading-spinner"></span>Подготовка...';
 
   try {
+    const body = {
+      plan: selectedPlan,
+      tg_user_id: String(tgUserId),
+    };
+    // Если есть initData — передаём для безопасной проверки на сервере
+    if (initDataRaw) {
+      body.init_data = initDataRaw;
+    }
+
     const res = await fetch(`${BOT_API_URL}/payment/create`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ tg_user_id: String(tgUserId), plan: selectedPlan }),
+      body: JSON.stringify(body),
     });
 
     if (!res.ok) {
@@ -343,6 +395,7 @@ async function startPayment() {
     const data = await res.json();
     if (!data.url) throw new Error('Не удалось получить ссылку на оплату');
 
+    // Открываем Robokassa во внешнем браузере (обязательно для редиректа после оплаты)
     if (tg?.openLink) {
       tg.openLink(data.url);
     } else {
