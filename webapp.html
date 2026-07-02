@@ -320,7 +320,7 @@
     Перейти к оплате
   </button>
   <p class="terms-note">
-    Нажимая «Перейти к оплате», вы соглашаетесь с
+    Нажатие «Перейти к оплате» означает согласие с 
     <a href="https://andrew2284868.github.io/curlstat-landing/offer.html" target="_blank">офертой</a>
     и
     <a href="https://andrew2284868.github.io/curlstat-landing/privacy.html" target="_blank">политикой конфиденциальности</a>.
@@ -364,13 +364,16 @@ function hideError() {
 async function startPayment() {
   hideError();
 
+  const urlParams = new URLSearchParams(window.location.search);
+  
   if (!tgUserId) {
-    const params = new URLSearchParams(window.location.search);
-    tgUserId = params.get('tg_id');
+    tgUserId = urlParams.get('tg_id');
   }
 
+  const urlToken = urlParams.get('token');
+
   if (!tgUserId) {
-    showError('Откройте эту страницу через Telegram.');
+    showError('Требуется открыть страницу через приложение.');
     return;
   }
 
@@ -387,9 +390,14 @@ async function startPayment() {
       body.init_data = initDataRaw;
     }
 
+    const headers = { 'Content-Type': 'application/json' };
+    if (urlToken) {
+        headers['X-Session-Token'] = urlToken;
+    }
+
     const res = await fetch(`${BOT_API_URL}/payment/create`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: headers,
       body: JSON.stringify(body),
     });
 
@@ -399,7 +407,7 @@ async function startPayment() {
     }
 
     const data = await res.json();
-    if (!data.url) throw new Error('Не удалось получить ссылку на оплату');
+    if (!data.url) throw new Error('Сбой получения ссылки на оплату');
 
     if (tg?.openLink) {
       tg.openLink(data.url);
@@ -408,7 +416,7 @@ async function startPayment() {
     }
 
   } catch (e) {
-    showError(e.message || 'Не удалось создать платёж. Попробуйте позже.');
+    showError(e.message || 'Сбой создания платежа. Повторите попытку позже.');
   } finally {
     btn.disabled = false;
     btn.innerHTML = 'Перейти к оплате';
